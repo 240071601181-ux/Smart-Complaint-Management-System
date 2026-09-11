@@ -1,0 +1,106 @@
+import { agentConfig } from './config';
+import { getLlmProvider, LlmMessage, LlmResponse, LlmToolDefinition } from './llm';
+import { getStateByCallId } from '../services/conversationStateService';
+import { searchKnowledge } from '../services/knowledgeService';
+import { logger } from '../utils/logger';
+
+export interface ProcessTurnOptions {
+  callId?: string;
+  messages: LlmMessage[];
+  tools?: LlmToolDefinition[];
+  stream?: boolean;
+  onStreamChunk?: (chunk: string) => void;
+}
+
+/**
+ * Checks whether user query requires company-specific knowledge search.
+ * Only triggers RAG search when factual knowledge/policy terms are asked.
+ */
+export const isKnowledgeSearchRequired = (text: string): boolean => {
+  if (!text || typeof text !== 'string') return false;
+  const lower = text.toLowerCase();
+  const keywords = [
+    'policy', 'sop', 'standard', 'rule', 'rate', 'guideline', 'restriction',
+    'term', 'condition', 'timing', 'guarantee', 'cancellation', 'procedure',
+    'hours', 'delivery time', 'tracking', 'cargo rule', 'what is the policy'
+  ];
+  return keywords.some(kw => lower.includes(kw));
+};
+
+export class AgentOrchestrator {
+  /**
+   * Process a normalized turn in a Vapi-independent manner.
+   */
+  async processTurn(options: ProcessTurnOptions): Promise<LlmResponse> {
+    const { callId, messages, tools, stream, onStreamChunk } = options;
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
+
+    logger.info('AgentOrchestrator processing turn', { callId, userMessage: lastUserMsg });
+
+    // 1. Fetch current conversation state from Phase 5 service if callId provided
+    let stateContextStr = '';
+    if (callId) {
+      try {
+        const state = await getStateByCallId(callId);
+        if (state) {
+          stateContextStr = `\n\nCURRENT CONVERSATION STATE:\n` +
+            `- Customer Name: ${state.customer_name || 'Not provided'}\n` +
+            `- Pickup Location: ${state.pickup_location || 'Not provided'}\n` +
+            `- Destination: ${state.destination || 'Not provided'}\n` +
+            `- Vehicle Type: ${state.vehicle_type || 'Not provided'}\n` +
+            `- Cargo Type: ${state.cargo_type || 'Not provided'}\n` +
+            `- Cargo Weight: ${state.cargo_weight !== null && state.cargo_weight !== undefined ? state.cargo_weight + ' kg' : 'Not provided'}\n` +
+            `- Required Date: ${state.required_date || 'Not provided'}\n` +
+            `- Budget: ${state.budget !== null && state.budget !== undefined ? 'INR ' + state.budget : 'Not provided'}\n` +
+            `- Urgency: ${state.urgency || 'Not provided'}\n` +
+            `- Additional Requirements: ${state.additional_requirements || 'None'}`;
+        }
+      } catch (err: any) {
+        logger.error('Error fetching conversation state in AgentOrchestrator', { error: err.message });
+      }
+    }
+
+    // 2. Selective RAG Knowledge Retrieval (Phase 6 integration)
+    let ragContextStr = '';
+    if (isKnowledgeSearchRequired(lastUserMsg)) {
+      try {
+        logger.info('Factual knowledge search triggered in AgentOrchestrator', { query: lastUserMsg });
+        const ragResult = await searchKnowledge({ query: lastUserMsg, topK: 3, similarityThreshold: 0.3 });
+        if (ragResult.results && ragResult.results.length > 0) {
+          ragContextStr = `\n\nRETRIEVED KNOWLEDGE BASE CONTEXT:\n` +
+            ragResult.results.map((r, i) => `[Document ${i + 1}: ${r.title}]\n${r.chunkText}`).join('\n\n');
+        } else {
+          ragContextStr = `\n\nRETRIEVED KNOWLEDGE BASE CONTEXT:\nNo relevant company policy document found matching the query.`;
+        }
+      } catch (err: any) {
+        logger.error('Error performing RAG search in AgentOrchestrator', { error: err.message });
+      }
+    }
+
+    // 3. Assemble System Prompt
+    const fullSystemPrompt = `${agentConfig.systemPrompt}
+
+SUPPORTED LANGUAGES & RULES:
+- Languages: English, Hindi, Tamil.
+- Naturally code-switch if customer speaks Hindi or Tamil.
+- Focus strictly on understanding & collecting logistics requirements.${stateContextStr}${ragContextStr}`;
+
+    // Filter incoming messages to exclude any existing system message and prepend assembled system prompt
+    const cleanHistory = messages.filter(m => m.role !== 'system');
+    const fullMessages: LlmMessage[] = [
+      { role: 'system', content: fullSystemPrompt },
+      ...cleanHistory
+    ];
+
+    // 4. Invoke LLM Provider
+    const provider = getLlmProvider();
+    logger.info(`Using LLM Provider: ${provider.getProviderName()}`);
+
+    if (stream && provider.generateStream) {
+      return provider.generateStream(fullMessages, tools, onStreamChunk);
+    }
+    return provider.generateResponse(fullMessages, tools);
+  }
+}
+
+export const orchestrator = new AgentOrchestrator();

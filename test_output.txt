@@ -1,0 +1,186 @@
+{"callId":"11111111-1111-1111-1111-111111111111","leadId":"22222222-2222-2222-2222-222222222222","level":"info","message":"Conversation state initialized","timestamp":"2026-09-11T14:04:36.952Z"}
+{"callId":"11111111-1111-1111-1111-111111111111","leadId":null,"level":"info","message":"Conversation state initialized","timestamp":"2026-09-11T14:04:36.956Z"}
+{"callId":"11111111-1111-1111-1111-111111111111","level":"info","message":"Conversation state already exists for call","timestamp":"2026-09-11T14:04:36.959Z"}
+{"callId":"11111111-1111-1111-1111-111111111111","level":"info","message":"Conversation state updated","timestamp":"2026-09-11T14:04:36.960Z","updates":{"budget":15000,"cargo_weight":500,"destination":"Bengaluru","pickup_location":"Chennai","urgency":"HIGH"}}
+PASS src/tests/conversationState.test.ts
+  Conversation State Service & Repository
+    initializeState
+      √ should initialize conversation state with internal call_id and nullable lead_id (17 ms)
+      √ should allow nullable lead_id when initializing state (3 ms)
+      √ should be idempotent and return existing state if already initialized (2 ms)
+    updateState
+      √ should update conversation state fields for a call (1 ms)
+    state isolation
+      √ should maintain distinct state for different calls (1 ms)
+
+{"level":"info","message":"Ingesting document","source":"sops/logistics.pdf","timestamp":"2026-09-11T14:04:37.454Z","title":"Logistics Standard Operating Procedure"}
+{"chunksCreated":1,"documentId":"10000000-0000-0000-0000-000000000001","level":"info","message":"Document ingested successfully","timestamp":"2026-09-11T14:04:37.457Z"}
+{"level":"info","message":"Searching knowledge base","query":"delivery time","similarityThreshold":0.5,"timestamp":"2026-09-11T14:04:37.459Z","topK":2}
+{"level":"info","message":"Knowledge search complete","query":"delivery time","resultsFound":1,"timestamp":"2026-09-11T14:04:37.460Z"}
+{"level":"info","message":"Searching knowledge base","query":"quantum mechanics","similarityThreshold":0.8,"timestamp":"2026-09-11T14:04:37.461Z","topK":5}
+{"level":"info","message":"Knowledge search complete","query":"quantum mechanics","resultsFound":0,"timestamp":"2026-09-11T14:04:37.462Z"}
+{"documentId":"99999999-9999-9999-9999-999999999999","level":"info","message":"Searching knowledge base","query":"policy guidelines","similarityThreshold":0,"timestamp":"2026-09-11T14:04:37.462Z","topK":5}
+{"level":"info","message":"Knowledge search complete","query":"policy guidelines","resultsFound":0,"timestamp":"2026-09-11T14:04:37.463Z"}
+{"leadId":"lead-123","level":"info","message":"Tool updateLeadInformation executed successfully","timestamp":"2026-09-11T14:04:37.474Z"}
+{"callId":"call-123","level":"info","message":"Conversation state updated","timestamp":"2026-09-11T14:04:37.478Z","updates":{"pickup_location":"Delhi"}}
+{"callId":"call-123","level":"info","message":"Tool updateConversationState executed successfully","timestamp":"2026-09-11T14:04:37.478Z"}
+{"error":"Cannot read properties of undefined (reading 'rows')","level":"error","message":"Error in endCall tool","timestamp":"2026-09-11T14:04:37.480Z"}
+{"level":"info","message":"Ingesting document","timestamp":"2026-09-11T14:04:37.506Z","title":"API Terms"}
+{"eventType":"call.initiated","level":"info","message":"Received Vapi webhook","payload":{"event":{"data":{"callId":"123"},"type":"call.initiated"}},"timestamp":"2026-09-11T14:04:37.507Z"}
+FAIL src/tests/agentTools.test.ts
+  Agent Configuration
+    √ should have a system prompt focused strictly on collecting logistics requirements (8 ms)
+    √ should support English, Hindi, and Tamil (1 ms)
+    √ should list qualification questions for collecting shipment details (1 ms)
+  Agent Tools & Payload Validation
+    updateLeadInformation
+      √ should validate valid updateLead payload
+      √ should catch invalid updateLead payload
+      √ should execute updateLeadInformation successfully with mocked DB (3 ms)
+    updateConversationState
+      √ should validate valid updateConversationState payload (1 ms)
+      √ should catch type mismatch in cargo_weight and budget
+      √ should execute updateConversationState successfully with mocked DB (1 ms)
+    endCall
+      √ should validate valid endCall payload
+      √ should catch missing callId in endCall payload (1 ms)
+      × should execute endCall and update internal call status with mocked DB (3 ms)
+
+  ● Agent Tools & Payload Validation › endCall › should execute endCall and update internal call status with mocked DB
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+    [0m [90m 124 |[39m       })[33m;[39m
+     [90m 125 |[39m       [36mconst[39m res [33m=[39m [36mawait[39m endCall({ callId[33m:[39m [32m'call-123'[39m })[33m;[39m
+    [31m[1m>[22m[39m[90m 126 |[39m       expect(res[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m     |[39m                           [31m[1m^[22m[39m
+     [90m 127 |[39m       expect(res[33m.[39mmessage)[33m.[39mtoContain([32m'Call ended'[39m)[33m;[39m
+     [90m 128 |[39m     })[33m;[39m
+     [90m 129 |[39m   })[33m;[39m[0m
+
+      at Object.<anonymous> (src/tests/agentTools.test.ts:126:27)
+
+{"chunksCreated":1,"documentId":"10000000-0000-0000-0000-000000000001","level":"info","message":"Document ingested successfully","timestamp":"2026-09-11T14:04:37.516Z"}
+{"level":"info","message":"Searching knowledge base","query":"shipping rates","similarityThreshold":0,"timestamp":"2026-09-11T14:04:37.533Z","topK":3}
+{"level":"info","message":"Knowledge search complete","query":"shipping rates","resultsFound":0,"timestamp":"2026-09-11T14:04:37.535Z"}
+{"eventType":"unknown.event","level":"info","message":"Received Vapi webhook","payload":{"event":{"type":"unknown.event"}},"timestamp":"2026-09-11T14:04:37.534Z"}
+{"error":{"code":"ECONNREFUSED"},"level":"error","message":"Error processing Vapi webhook","payload":{"event":{"data":{"callId":"123"},"type":"call.initiated"}},"timestamp":"2026-09-11T14:04:37.536Z"}
+PASS src/tests/knowledgeRag.test.ts
+  Phase 6: RAG & Knowledge Retrieval System
+    1. Text Chunking Service & Validation
+      √ should split text into chunks respecting word boundaries (6 ms)
+      √ should reject invalid chunkSize (<= 0) (14 ms)
+      √ should reject chunkOverlap >= chunkSize (1 ms)
+      √ should return empty array for empty text (1 ms)
+    2. Embedding Provider Abstraction & Dimension Enforcement
+      √ should generate deterministic vectors matching exact requested dimension (6 ms)
+      √ should calculate cosine similarity correctly between unit vectors
+    3. Knowledge Ingestion & Vector Search Service
+      √ should ingest a document and preserve document metadata and chunk index (4 ms)
+      √ should support similarityThreshold and topK in searchKnowledge (3 ms)
+      √ should return zero results when no chunk meets similarityThreshold (1 ms)
+      √ should enforce document isolation when documentId filter is provided (3 ms)
+    4. Knowledge REST API Endpoints
+      √ POST /api/v1/knowledge/ingest - should accept document ingestion payload and return 201 (59 ms)
+      √ POST /api/v1/knowledge/ingest - should reject missing title with 400 (6 ms)
+      √ POST /api/v1/knowledge/search - should perform similarity search and return 200 (6 ms)
+      √ POST /api/v1/knowledge/search - should reject missing query with 400 (4 ms)
+
+  console.warn
+    Vapi webhook validation failed {
+      errors: [ 'Missing or invalid event object' ],
+      payload: { foo: 'bar' }
+    }
+
+    [0m [90m  8 |[39m     [36mif[39m (errors[33m.[39mlength) {
+     [90m  9 |[39m       [90m// Log validation error but still return 200 to avoid retries from Vapi[39m
+    [31m[1m>[22m[39m[90m 10 |[39m       console[33m.[39mwarn([32m'Vapi webhook validation failed'[39m[33m,[39m { errors[33m,[39m payload[33m:[39m req[33m.[39mbody })[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 11 |[39m       [36mreturn[39m res[33m.[39mstatus([35m200[39m)[33m.[39mjson({ success[33m:[39m [36mtrue[39m })[33m;[39m
+     [90m 12 |[39m     }
+     [90m 13 |[39m     [90m// Fire‑and‑forget: process event asynchronously[39m[0m
+
+      at handleVapiWebhook (src/controllers/vapiWebhookController.ts:10:15)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at next (node_modules/express/lib/router/route.js:149:13)
+      at Route.dispatch (node_modules/express/lib/router/route.js:119:3)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at node_modules/express/lib/router/index.js:284:15
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at router.handle (node_modules/express/lib/router/index.js:175:3)
+      at router (node_modules/express/lib/router/index.js:47:12)
+      at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:328:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at node_modules/body-parser/lib/read.js:137:5
+      at invokeCallback (node_modules/raw-body/index.js:238:16)
+      at done (node_modules/raw-body/index.js:227:7)
+      at IncomingMessage.onEnd (node_modules/raw-body/index.js:287:7)
+
+PASS src/tests/vapiWebhook.test.ts
+  Vapi Webhook
+    √ should accept a valid webhook and return 200 (54 ms)
+    √ should handle unknown event types gracefully (8 ms)
+    √ should reject malformed payload but still return 200 (34 ms)
+  Health Check Endpoint
+    √ should return 200 and status ok (3 ms)
+
+{"callId":"call-123","level":"info","message":"AgentOrchestrator processing turn","timestamp":"2026-09-11T14:04:37.822Z","userMessage":"Where is my pickup?"}
+{"level":"info","message":"Using LLM Provider: mock","timestamp":"2026-09-11T14:04:37.824Z"}
+{"level":"info","message":"Received Vapi Custom LLM chat completions request","messageCount":1,"model":"vapi-logistics-agent","stream":false,"timestamp":"2026-09-11T14:04:37.842Z"}
+{"level":"info","message":"AgentOrchestrator processing turn","timestamp":"2026-09-11T14:04:37.843Z","userMessage":"I need to transport 500kg cargo from Chennai."}
+{"level":"info","message":"Using LLM Provider: mock","timestamp":"2026-09-11T14:04:37.843Z"}
+{"level":"info","message":"Received Vapi Custom LLM chat completions request","messageCount":1,"model":"vapi-logistics-agent","stream":true,"timestamp":"2026-09-11T14:04:37.850Z"}
+{"level":"info","message":"AgentOrchestrator processing turn","timestamp":"2026-09-11T14:04:37.850Z","userMessage":"Hi"}
+{"level":"info","message":"Using LLM Provider: mock","timestamp":"2026-09-11T14:04:37.850Z"}
+{"count":1,"level":"info","message":"Received Vapi tool calls","timestamp":"2026-09-11T14:04:37.859Z","toolCalls":[{"arguments":{"callId":"call-1","updates":{"destination":"Bengaluru","pickup_location":"Chennai"}},"name":"updateConversationState","toolCallId":"tc_test_1"}]}
+{"callId":"call-1","level":"info","message":"Conversation state updated","timestamp":"2026-09-11T14:04:37.859Z","updates":{"destination":"Bengaluru","pickup_location":"Chennai"}}
+{"callId":"call-1","level":"info","message":"Tool updateConversationState executed successfully","timestamp":"2026-09-11T14:04:37.859Z"}
+{"count":1,"level":"info","message":"Received Vapi tool calls","timestamp":"2026-09-11T14:04:37.863Z","toolCalls":[{"arguments":{"callId":"call-ended-1","reason":"Completed requirement collection"},"name":"endCall","toolCallId":"tc_end_1"}]}
+{"error":"Cannot read properties of undefined (reading 'rows')","level":"error","message":"Error in endCall tool","timestamp":"2026-09-11T14:04:37.863Z"}
+FAIL src/tests/agentIntegration.test.ts
+  Phase 7: AI Agent + RAG Integration
+    1. LLM Provider Abstraction & Mock Provider
+      √ should load MockLlmProvider and return offline completion without API keys (5 ms)
+      √ should support streaming chunks in MockLlmProvider
+    2. Agent Orchestrator & Selective RAG Evaluation
+      √ should evaluate whether factual company knowledge search is required (1 ms)
+      √ should process turn and return response incorporating state context when callId is provided (2 ms)
+    3. Custom LLM OpenAI-Compatible Endpoint
+      √ POST /api/v1/vapi/custom-llm/chat/completions - should return OpenAI chat completion format (non-streaming) (23 ms)
+      √ POST /api/v1/vapi/custom-llm/chat/completions - should return SSE stream when stream: true (4 ms)
+      √ POST /api/v1/vapi/custom-llm/chat/completions - should return 400 for invalid payload without messages (3 ms)
+    4. Vapi Tool-Calls Protocol & Payloads Normalization
+      √ should normalize toolWithToolCallList variant
+      √ should normalize toolCallList variant (1 ms)
+      √ POST /api/v1/webhooks/vapi/tools - should execute updateConversationState tool call and return results (4 ms)
+      × POST /api/v1/webhooks/vapi/tools - should execute endCall tool and update internal call status (4 ms)
+
+  ● Phase 7: AI Agent + RAG Integration › 4. Vapi Tool-Calls Protocol & Payloads Normalization › POST /api/v1/webhooks/vapi/tools - should execute endCall tool and update internal call status
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "Call ended"
+    Received string:    "Cannot read properties of undefined (reading 'rows')"
+
+    [0m [90m 227 |[39m       expect(res[33m.[39mbody[33m.[39mresults)[33m.[39mtoHaveLength([35m1[39m)[33m;[39m
+     [90m 228 |[39m       expect(res[33m.[39mbody[33m.[39mresults[[35m0[39m][33m.[39mtoolCallId)[33m.[39mtoBe([32m'tc_end_1'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 229 |[39m       expect(res[33m.[39mbody[33m.[39mresults[[35m0[39m][33m.[39mresult)[33m.[39mtoContain([32m'Call ended'[39m)[33m;[39m
+     [90m     |[39m                                          [31m[1m^[22m[39m
+     [90m 230 |[39m     })[33m;[39m
+     [90m 231 |[39m   })[33m;[39m
+     [90m 232 |[39m })[33m;[39m[0m
+
+      at Object.<anonymous> (src/tests/agentIntegration.test.ts:229:42)
+
+Test Suites: 2 failed, 3 passed, 5 total
+Tests:       2 failed, 44 passed, 46 total
+Snapshots:   0 total
+Time:        3.974 s, estimated 4 s
+Ran all test suites.

@@ -1,0 +1,123 @@
+/**
+ * Phase 12 – calendar endpoint tests (service reads mocked; no Google calls).
+ *
+ * Verifies the thin internal API: validation, explicit booking (201),
+ * duplicate (200), busy (409), invalid slot (422), availability GET,
+ * and booking GET (200/404).
+ */
+import request from 'supertest';
+import app from '../app';
+import { pool } from '../database';
+import {
+  resetCalendarProviderForTests,
+  setCalendarProviderForTests
+} from '../services/calendar/calendarProvider';
+import { MockCalendarProvider } from '../services/calendar/mockCalendarProvider';
+
+jest.mock('../database', () => {
+  const mPool = { query: jest.fn() };
+  return { pool: mPool, default: mPool };
+});
+
+describe('Calendar endpoints', () => {
+  const OLD_ENV = process.env;
+
+  const lead: any = { id: 'lead-1', name: 'Acme Logistics', phone: '+911234567890', email: 'ops@acme.example', status: 'NEW' };
+  const call: any = { id: 'call-1', lead_id: 'lead-1', vapi_call_id: 'vapi-1', status: 'ended' };
+  const state: any = { id: 's-1', call_id: 'call-1', lead_id: 'lead-1', pickup_location: 'Chennai', destination: 'Bengaluru' };
+  const hot: any = { id: 'q-1', call_id: 'call-1', lead_id: 'lead-1', score: 85, tier: 'HOT' };
+  const slot = { start: '2026-09-20T10:00:00+05:30', end: '2026-09-20T10:30:00+05:30' };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env = {
+      ...OLD_ENV,
+      CALENDAR_ENABLED: 'true',
+      CALENDAR_PROVIDER: 'mock',
+      GOOGLE_CLIENT_ID: 'test-client-id',
+      GOOGLE_CLIENT_SECRET: 'test-client-secret',
+      GOOGLE_REFRESH_TOKEN: 'test-refresh-token',
+      GOOGLE_CALENDAR_ID: 'primary',
+      CALENDAR_AUTO_BOOK_TIERS: 'HOT,WARM'
+    };
+    setCalendarProviderForTests(new MockCalendarProvider());
+  });
+
+  afterEach(() => {
+    resetCalendarProviderForTests();
+  });
+
+  afterAll(() => {
+    process.env = OLD_ENV;
+  });
+
+  const mockBookingReads = () => {
+    (pool.query as jest.Mock)
+      .mockResolvedValueOnce({ rows: [call] })
+      .mockResolvedValueOnce({ rows: [state] })
+      .mockResolvedValueOnce({ rows: [hot] })
+      .mockResolvedValueOnce({ rows: [lead] });
+  };
+
+  it('should reject booking requests without identity or explicit slot', async () => {
+    const noIdentity = await request(app).post('/api/v1/calendar/bookings').send({ ...slot });
+    expect(noIdentity.status).toBe(400);
+    const noSlot = await request(app).post('/api/v1/calendar/bookings').send({ callId: 'call-1' });
+    expect(noSlot.status).toBe(400);
+  });
+
+  it('should book explicitly and return 201 with stored meeting details', async () => {
+    mockBookingReads();
+    (pool.query as jest.Mock)
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ id: 'b-1', attempts: 1 }] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 'b-1', status: 'booked', external_event_id: 'mock-event-1', meet_url: 'https://meet.google.com/mock-1' }]
+      });
+
+    const res = await request(app).post('/api/v1/calendar/bookings').send({ callId: 'call-1', ...slot });
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.meet_url).toBe('https://meet.google.com/mock-1');
+    expect(res.body.data.external_event_id).toBe('mock-event-1');
+  });
+
+  it('should return 409 when the requested slot is busy', async () => {
+    const provider = new MockCalendarProvider();
+    provider.busyWindows.push({ start: '2026-09-20T04:00:00.000Z', end: '2026-09-20T06:00:00.000Z' });
+    setCalendarProviderForTests(provider);
+    mockBookingReads();
+    (pool.query as jest.Mock)
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ id: 'b-2', attempts: 1 }] })
+      .mockResolvedValueOnce({ rows: [{ id: 'b-2', status: 'skipped_unavailable' }] });
+
+    const res = await request(app).post('/api/v1/calendar/bookings').send({ callId: 'call-1', ...slot });
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('should return 422 for invalid slots without provider calls', async () => {
+    const res = await request(app)
+      .post('/api/v1/calendar/bookings')
+      .send({ callId: 'call-1', start: slot.start, end: slot.start });
+    expect(res.status).toBe(422);
+  });
+
+  it('should check availability and read bookings by id', async () => {
+    const free = await request(app).get('/api/v1/calendar/availability').query({ ...slot });
+    expect(free.status).toBe(200);
+    expect(free.body).toEqual({ success: true, data: { available: true } });
+
+    (pool.query as jest.Mock).mockResolvedValueOnce({
+      rows: [{ id: 'b-9', status: 'booked', meet_url: 'https://meet.google.com/mock-9' }]
+    });
+    const found = await request(app).get('/api/v1/calendar/bookings/b-9');
+    expect(found.status).toBe(200);
+    expect(found.body.data.meet_url).toBe('https://meet.google.com/mock-9');
+
+    (pool.query as jest.Mock).mockResolvedValueOnce({ rows: [] });
+    const missing = await request(app).get('/api/v1/calendar/bookings/does-not-exist');
+    expect(missing.status).toBe(404);
+  });
+});

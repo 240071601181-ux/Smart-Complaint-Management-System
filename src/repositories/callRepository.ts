@@ -11,6 +11,18 @@ export const findCallById = async (id: string): Promise<Call | null> => {
   return res.rows[0] || null;
 };
 
+/**
+ * Most recent still-open call for a lead (anything not terminally 'ended').
+ * Used to reject duplicate outbound-call initiation for the same lead.
+ */
+export const findActiveCallByLeadId = async (leadId: string): Promise<Call | null> => {
+  const res = await pool.query(
+    `SELECT * FROM calls WHERE lead_id = $1 AND status NOT IN ('ended') ORDER BY created_at DESC LIMIT 1`,
+    [leadId]
+  );
+  return res.rows[0] || null;
+};
+
 export const upsertCall = async (callData: Partial<Call> & { vapi_call_id: string }): Promise<Call> => {
   const existing = await findCallByVapiId(callData.vapi_call_id);
   if (existing) {

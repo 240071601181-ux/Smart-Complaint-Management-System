@@ -9,12 +9,31 @@ import { handleVapiToolCalls } from './controllers/vapiToolController';
 import qualificationRoutes from './routes/qualificationRoutes';
 import calendarRoutes from './routes/calendarRoutes';
 import followupRoutes from './routes/followupRoutes';
+import callRoutes from './routes/callRoutes';
 
 // Load environment variables
 dotenv.config({ path: '.env' });
 
 const app = express();
 app.use(express.json());
+
+// Minimal development-safe CORS for the local frontend.
+// Allows only the configured frontend origin (no wildcard, so credentials
+// remain possible later). No routes, controllers, or logic touched.
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+app.use((req: Request, res: Response, next: NextFunction) => {
+  res.header('Access-Control-Allow-Origin', FRONTEND_ORIGIN);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  // Required now that the frontend sends its session with API requests
+  // (fetch credentials: "include"). Origin stays allowlisted (no wildcard).
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Vary', 'Origin');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 
 
@@ -34,6 +53,7 @@ app.use('/api/v1/knowledge', knowledgeRoutes);
 app.use('/api/v1/qualifications', qualificationRoutes);
 app.use('/api/v1/calendar', calendarRoutes);
 app.use('/api/v1/followups', followupRoutes);
+app.use('/api/v1/calls', callRoutes);
 
 // Centralized error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

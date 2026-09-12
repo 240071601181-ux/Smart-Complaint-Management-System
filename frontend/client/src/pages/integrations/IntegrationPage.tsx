@@ -1,0 +1,24 @@
+import {
+  AlertCircle,
+  CalendarDays,
+  CheckCircle2,
+  Cloud,
+  Database,
+  FileText,
+  Gauge,
+  MessageCircle,
+  MoreHorizontal,
+  Network,
+  Plus,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import { Button, Card, MetricCard } from "@/components/app/ui";
+import { pageMeta } from "@/mock/pipeline";
+import type { IconType } from "@/mock/pipeline";
+
+export function IntegrationPage({ type, onToast }: { type: string; onToast: (message: string) => void }) {
+  const titles: Record<string, { title: string; provider: string; icon: IconType; color: string }> = { "/crm": { title: "CRM sync", provider: "HubSpot CRM", icon: Database, color: "orange" }, "/whatsapp": { title: "WhatsApp messaging", provider: "WhatsApp Cloud API", icon: MessageCircle, color: "green" }, "/calendar": { title: "Calendar workspace", provider: "Google Calendar", icon: CalendarDays, color: "blue" }, "/automation": { title: "Automation center", provider: "n8n workflows", icon: Network, color: "violet" }, "/knowledge": { title: "Knowledge base", provider: "Logistics intelligence", icon: FileText, color: "cyan" } };
+  const config = titles[type] ?? titles["/crm"];
+  return <><div className="page-heading"><div><p className="lede">{pageMeta[type]?.description}</p></div><div className="heading-actions"><Button icon={RefreshCw} variant="secondary" onClick={() => onToast("Sync queued")}>Sync now</Button><Button icon={Plus} variant="primary" onClick={() => onToast(type === "/knowledge" ? "Document ingestion opened" : "Configuration flow opened")}>{type === "/knowledge" ? "Ingest document" : "Configure"}</Button></div></div><div className="integration-hero"><div className={`integration-logo ${config.color}`}><config.icon size={25} /></div><div><span className="section-kicker">CONNECTED SERVICE</span><h2>{config.provider}</h2><p>Connected to Acme Cargo · Last sync 2 minutes ago</p></div><span className="connected-chip"><CheckCircle2 size={13} />Operational</span><Button variant="ghost" onClick={() => onToast("Integration settings opened")}>Manage connection</Button></div><div className="metric-grid integration-metrics"><MetricCard label={type === "/knowledge" ? "Documents" : "Records synced"} value={type === "/knowledge" ? "28" : "4,812"} delta="8.4%" note="last 30 days" icon={FileText} /><MetricCard label={type === "/knowledge" ? "Vectorized chunks" : "Last sync"} value={type === "/knowledge" ? "2,840" : "2m"} delta="100%" note="healthy connection" accent="green" icon={RefreshCw} /><MetricCard label="Success rate" value="99.8%" delta="0.6%" note="above target" accent="violet" icon={Gauge} /><MetricCard label="Needs attention" value="3" delta="-2" note="open items" accent="amber" icon={AlertCircle} /></div><div className="split-grid"><Card><div className="card-header"><div><span className="section-kicker">{type === "/knowledge" ? "DOCUMENTS" : type === "/automation" ? "WORKFLOWS" : "SYNC ACTIVITY"}</span><h2>{type === "/knowledge" ? "Knowledge inventory" : type === "/automation" ? "Active workflows" : "Latest activity"}</h2></div><button className="more-btn"><MoreHorizontal size={17} /></button></div>{(type === "/knowledge" ? [["Chennai–Mumbai corridor tariff", "Tariff sheet · 1,284 chunks", "Vectorized"], ["Vehicle capacity matrix", "Reference doc · 742 chunks", "Vectorized"], ["ePOD & handling playbook", "Operations guide · 814 chunks", "Processing"], ["September service levels", "Policy · 290 chunks", "Vectorized"]] : type === "/automation" ? [["lead.created → qualify", "428 executions · 99.8% success", "Enabled"], ["qualification.completed → CRM", "186 executions · 100% success", "Enabled"], ["call.completed → WhatsApp", "248 executions · 98.4% success", "Enabled"], ["followup.retry → alert", "12 executions · 100% success", "Paused"]] : [["Lead batch sync", "4,812 records updated", "2 min ago"], ["Qualification fields mapped", "186 records updated", "18 min ago"], ["Contact lookup", "12 records enriched", "42 min ago"], ["Failed sync retry", "3 records retried", "1 hr ago"]]).map(([title, sub, state]) => <div className="integration-row" key={title}><span className={`row-icon ${config.color}`}><config.icon size={15} /></span><span><b>{title}</b><small>{sub}</small></span><span className={`state-tag ${state === "Processing" || state === "Paused" ? "warning" : ""}`}>{state}</span><MoreHorizontal size={15} className="row-end" /></div>)}</Card><Card className="info-card"><span className="section-kicker">SYSTEM NOTE</span><h2>Keep signal close to action.</h2><p>MadVoice AI uses this integration to keep intent, context, and the next best action in one operational loop.</p><div className="info-note"><Sparkles size={15} /><span>Last health check passed with no blocking issues.</span></div><Button variant="secondary" className="full-btn" onClick={() => onToast("Diagnostics complete")}>Run diagnostics</Button></Card></div></>;
+}

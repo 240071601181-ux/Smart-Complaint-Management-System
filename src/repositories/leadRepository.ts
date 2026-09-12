@@ -3,9 +3,13 @@ import { Lead } from '../models/lead';
 
 export class LeadRepository {
   async create(lead: Omit<Lead, 'id' | 'created_at' | 'updated_at'>): Promise<Lead> {
+    // Defensive fallback: never insert NULL for the NOT NULL status column.
+    // The canonical default comes from migration 001 (DEFAULT 'NEW').
+    const status =
+      typeof lead.status === 'string' && lead.status.trim() !== '' ? lead.status : 'NEW';
     const result = await pool.query(
       `INSERT INTO leads (source, name, phone, email, status) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [lead.source, lead.name, lead.phone, lead.email ?? null, lead.status]
+      [lead.source, lead.name, lead.phone, lead.email ?? null, status]
     );
     return result.rows[0];
   }

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { LeadService } from '../services/leadService';
-import { validateLead, validateLeadUpdate } from '../middleware/validation';
+import { validateLead, validateLeadListQuery, validateLeadUpdate } from '../middleware/validation';
 import { enqueueN8nEvent } from '../services/n8n/n8nEmitter';
 import { enqueueWhatsappMessage } from '../services/whatsapp/whatsappSender';
 
@@ -23,7 +23,21 @@ export const createLead = async (req: Request, res: Response, next: NextFunction
   }
 };
 
+export const listLeads = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { errors, params } = validateLeadListQuery(req.query);
+    if (errors.length) {
+      return res.status(400).json({ success: false, error: { message: 'Validation error', code: 400, details: errors } });
+    }
+    const result = await leadService.listLeads(params);
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getLead = async (req: Request, res: Response, next: NextFunction) => {
+
   try {
     const { id } = req.params;
     const lead = await leadService.getLead(id);

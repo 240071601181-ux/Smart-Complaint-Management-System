@@ -5,6 +5,19 @@ export type CreateLeadInput = Omit<Lead, 'id' | 'created_at' | 'updated_at' | 's
   status?: string;
 };
 
+export interface ListLeadsOptions {
+  search?: string;
+  page: number;
+  limit: number;
+}
+
+export interface ListLeadsResult {
+  leads: Lead[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export class LeadService {
   private repo = new LeadRepository();
 
@@ -18,6 +31,15 @@ export class LeadService {
 
   async getLead(id: string) {
     return this.repo.findById(id);
+  }
+
+  async listLeads(opts: ListLeadsOptions): Promise<ListLeadsResult> {
+    const offset = (opts.page - 1) * opts.limit;
+    const [leads, total] = await Promise.all([
+      this.repo.findAll({ search: opts.search, limit: opts.limit, offset }),
+      this.repo.countAll({ search: opts.search }),
+    ]);
+    return { leads, total, page: opts.page, limit: opts.limit };
   }
 
   async updateLead(id: string, fields: Partial<Omit<Lead, 'id' | 'created_at' | 'updated_at'>>) {

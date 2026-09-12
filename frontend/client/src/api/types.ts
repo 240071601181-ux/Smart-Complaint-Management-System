@@ -71,6 +71,19 @@ export interface UpdateLeadInput {
   status?: string;
 }
 
+export interface ListLeadsInput {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface LeadListResult {
+  leads: Lead[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // ---------------------------------------------------------------------------
 // Qualification  (backend: src/models/Qualification.ts)
 // ---------------------------------------------------------------------------

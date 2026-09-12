@@ -5,23 +5,23 @@
  * creates a new one) and the Phase 14C-3 API services (never fetch/axios).
  *
  * Backend coverage (existing Express endpoints only):
+ *   GET   /api/v1/leads      -> useLeadsQuery (search/page/limit, paginated)
  *   GET   /api/v1/leads/:id  -> useLeadQuery / useLeadDetail
  *   POST  /api/v1/leads      -> useCreateLeadMutation
  *   PATCH /api/v1/leads/:id  -> useUpdateLeadMutation
- *
- * There is NO GET-all endpoint, so there is deliberately no list query here.
- * The /leads list keeps using mock data until a backend list endpoint exists.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../errors";
-import { createLead, getLead, updateLead } from "../services/leads";
-import type { CreateLeadInput, Lead as ApiLead, UpdateLeadInput } from "../types";
+import { createLead, getLead, listLeads, updateLead } from "../services/leads";
+import type { CreateLeadInput, Lead as ApiLead, LeadListResult, ListLeadsInput, UpdateLeadInput } from "../types";
 import type { Lead as DisplayLead } from "@/mock/pipeline";
 import { toDisplayLead } from "./leadDisplay";
 
 export const leadKeys = {
   all: ["leads"] as const,
+  lists: () => [...leadKeys.all, "list"] as const,
+  list: (params: ListLeadsInput) => [...leadKeys.lists(), params] as const,
   detail: (id: string) => [...leadKeys.all, "detail", id] as const,
 };
 
@@ -41,6 +41,17 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
 
 function toError(error: unknown): ApiError | Error {
   return error instanceof Error ? error : new Error("Something went wrong.");
+}
+
+/** Paginated backend leads list. Previous page stays visible while refetching. */
+export function useLeadsQuery(params: ListLeadsInput) {
+  return useQuery<LeadListResult>({
+    queryKey: leadKeys.list(params),
+    queryFn: () => listLeads(params),
+    retry: shouldRetry,
+    staleTime: 15_000,
+    placeholderData: (previousData) => previousData,
+  });
 }
 
 /** Raw backend lead query. Enabled only when an id is present. */
@@ -123,6 +134,8 @@ export function useCreateLeadMutation() {
       // Seed the detail cache so the post-create navigation renders instantly,
       // then let the detail page refetch the authoritative record.
       queryClient.setQueryData(leadKeys.detail(lead.id), lead);
+      // Refetch the live leads list so the new lead appears there too.
+      queryClient.invalidateQueries({ queryKey: leadKeys.all });
     },
   });
 }
